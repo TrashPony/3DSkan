@@ -11,27 +11,7 @@ public class Scan {
     private static String dataString = "";
 
     public static void main(String args[]) {
-        iR_sensor1.add((float)6);
-        iR_sensor1.add((float)7);
-        iR_sensor1.add((float)8);
-        iR_sensor1.add((float)9);
-        iR_sensor1.add((float)10);
-        iR_sensor1.add((float)9);
-        iR_sensor1.add((float)8);
-        iR_sensor1.add((float)7);
-        iR_sensor1.add((float)6);
-
-        iR_sensor2.add((float)6);
-        iR_sensor2.add((float)5);
-        iR_sensor2.add((float)4);
-        iR_sensor2.add((float)3);
-        iR_sensor2.add((float)2);
-        iR_sensor2.add((float)3);
-        iR_sensor2.add((float)4);
-        iR_sensor2.add((float)5);
-        iR_sensor2.add((float)6);
-
-        Calculations();
+        //Calculations();
 
         serialPort = new SerialPort("COM3");
         try {
@@ -175,7 +155,7 @@ public class Scan {
         return boxSide;
     }
 
-        private static void eliminationOfError(ArrayList<Coordinate> boxSide){
+    private static void eliminationOfError(ArrayList<Coordinate> boxSide){
         for(int i =0; i < 1; i++){
             boxSide.remove(boxSide.size()-(i+1));
             boxSide.remove(i);
