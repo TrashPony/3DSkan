@@ -27,27 +27,37 @@ public class Scan {
 
     private static void Calculations(){
         ArrayList<ArrayList<Coordinate>> boxSide;
-
         ArrayList<Coordinate> iR_sensorCoordinate1;
         ArrayList<Coordinate> iR_sensorCoordinate2;
 
-        float k;
+        ArrayList<Coordinate> iR_sensorCoordinate1_Kalman;
+        ArrayList<Coordinate> iR_sensorCoordinate2_Kalman;
+        int MaxMin[];
+
+        float k1;
+        float k2;
 
         try {
-            //Надо прогнать полученые данные через фильтр Калмана перед разделением.
             //Переводим показания в обьект типа координата
-            // intervalX - это переменная означает что между каждым измерение проходит столько растония в см.
+                // intervalX - это переменная означает что между каждым измерение проходит столько растония в см.
             float intervalX = (float)0.5;
             iR_sensorCoordinate1 = createCoordinates(iR_sensor1, intervalX);
             iR_sensorCoordinate2 = createCoordinates(iR_sensor2, intervalX);
             // Сглаживание данных упрощенным методом Калмана
-            // коэффецент храниться в переменной k. 1 Это не обработаные значения, 0.1 максимальное сглаживание.
-            k = (float) 1;
-            iR_sensorCoordinate1 = checkIndications(iR_sensorCoordinate1, k);
-            iR_sensorCoordinate2 = checkIndications(iR_sensorCoordinate2, k);
-            // Находим точки которые теоритически являються углами прямоугольника
-            // и делим 2 масивка с показаниями на 4 масива обозночающие точки сторон прямоугольника
-            boxSide = findCenterPoint(iR_sensorCoordinate1,iR_sensorCoordinate2);
+                // коэффецент храниться в переменной k. 1 Это не обработаные значения, 0.1 максимальное сглаживание.
+            k1 = (float) 0.1;
+                //Создаем масивы координат с максимальным сглаживанием для нахождения углов.
+            iR_sensorCoordinate1_Kalman = checkIndications(iR_sensorCoordinate1, k1);
+            iR_sensorCoordinate2_Kalman = checkIndications(iR_sensorCoordinate2, k1);
+                //Проганяем масивы координат через фильтр что бы убрать скачки показаний.
+            k2 = (float) 0.8;
+            iR_sensorCoordinate1 = checkIndications(iR_sensorCoordinate1, k2);
+            iR_sensorCoordinate2 = checkIndications(iR_sensorCoordinate2, k2);
+            // Находим точки которые теоритически являються углами прямоугольника на максимально сглаженых показаниях
+                // и находим точки возможных углов прямоугольника
+            MaxMin = findCenterPoint(iR_sensorCoordinate1_Kalman,iR_sensorCoordinate2_Kalman);
+            //делим 2 масивка с координатами на 4 масива в точках обозночающие точки сторон прямоугольника MinMax
+            boxSide = divideOnSide(iR_sensorCoordinate1,iR_sensorCoordinate2,MaxMin);
             // нахождение коэфицента отклонения AB в формуле прямой y = A*x+B;
             float[] deviationAB1 = Approximation(boxSide.get(0));
             float[] deviationAB2 = Approximation(boxSide.get(1));
@@ -91,18 +101,13 @@ public class Scan {
         return  coordinatesXY;
     }
 
-    private static ArrayList<ArrayList<Coordinate>> findCenterPoint(ArrayList<Coordinate> iR_sensor1, ArrayList<Coordinate> iR_sensor2){
-
-        ArrayList<ArrayList<Coordinate>> boxSide = new ArrayList<>();
-        ArrayList<Coordinate> boxSide1 = new ArrayList<>();
-        ArrayList<Coordinate> boxSide2 = new ArrayList<>();
-        ArrayList<Coordinate> boxSide3 = new ArrayList<>();
-        ArrayList<Coordinate> boxSide4 = new ArrayList<>();
+    private static int[] findCenterPoint(ArrayList<Coordinate> iR_sensor1, ArrayList<Coordinate> iR_sensor2){
 
         int posMaxUnitIR1 = 0;
         int posMinUnitIR2 = 0;
         float max = iR_sensor1.get(0).y;
         float min = iR_sensor2.get(0).y;
+        int[] MaxMin = new int[2];
 
         for(int i = 0; i < iR_sensor1.size(); i++) {
             if(iR_sensor1.get(i).y > max) {
@@ -118,10 +123,26 @@ public class Scan {
             }
         }
 
-        boxSide1.addAll(iR_sensor1.subList(0,posMaxUnitIR1));
-        boxSide2.addAll(iR_sensor1.subList(posMaxUnitIR1,iR_sensor1.size()));
-        boxSide3.addAll(iR_sensor2.subList(0,posMinUnitIR2));
-        boxSide4.addAll(iR_sensor2.subList(posMinUnitIR2,iR_sensor2.size()));
+        MaxMin[0] = posMaxUnitIR1;
+        MaxMin[1] = posMinUnitIR2;
+
+        return MaxMin;
+    }
+
+    private static ArrayList<ArrayList<Coordinate>> divideOnSide(ArrayList<Coordinate> iR_sensor1, ArrayList<Coordinate> iR_sensor2, int[] MaxMin){
+
+        ArrayList<ArrayList<Coordinate>> boxSide = new ArrayList<>();
+        ArrayList<Coordinate> boxSide1 = new ArrayList<>();
+        ArrayList<Coordinate> boxSide2 = new ArrayList<>();
+        ArrayList<Coordinate> boxSide3 = new ArrayList<>();
+        ArrayList<Coordinate> boxSide4 = new ArrayList<>();
+
+
+        boxSide1.addAll(iR_sensor1.subList(0,MaxMin[0]));
+        boxSide2.addAll(iR_sensor1.subList(MaxMin[0],iR_sensor1.size()));
+        boxSide3.addAll(iR_sensor2.subList(0,MaxMin[1]));
+        boxSide4.addAll(iR_sensor2.subList(MaxMin[1],iR_sensor2.size()));
+
 
         boxSide.add(boxSide1);
         boxSide.add(boxSide2);
