@@ -68,7 +68,7 @@ public class Scan {
             iR_sensorCoordinate1_Kalman = checkIndications(iR_sensorCoordinate1, k1);
             iR_sensorCoordinate2_Kalman = checkIndications(iR_sensorCoordinate2, k1);
                 //Проганяем масивы координат через фильтр что бы убрать скачки показаний.
-            k2 = (float) 0.8;
+            k2 = (float) 1;
             iR_sensorCoordinate1 = checkIndications(iR_sensorCoordinate1, k2);
             iR_sensorCoordinate2 = checkIndications(iR_sensorCoordinate2, k2);
             // Находим точки которые теоритически являються углами прямоугольника на максимально сглаженых показаниях
@@ -175,7 +175,7 @@ public class Scan {
         return boxSide;
     }
 
-    private static void eliminationOfError(ArrayList<Coordinate> boxSide){
+        private static void eliminationOfError(ArrayList<Coordinate> boxSide){
         for(int i =0; i < 1; i++){
             boxSide.remove(boxSide.size()-(i+1));
             boxSide.remove(i);
