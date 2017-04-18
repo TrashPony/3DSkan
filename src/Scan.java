@@ -4,8 +4,6 @@
 import jssc.*;
 import java.util.ArrayList;
 
-import static java.lang.Thread.sleep;
-
 public class Scan {
     private static SerialPort serialPort;
     private static ArrayList<Float> iR_sensor1 = new ArrayList<>();
@@ -13,8 +11,28 @@ public class Scan {
     private static String dataString = "";
 
     public static void main(String args[]) {
+        iR_sensor1.add((float)6);
+        iR_sensor1.add((float)7);
+        iR_sensor1.add((float)8);
+        iR_sensor1.add((float)9);
+        iR_sensor1.add((float)10);
+        iR_sensor1.add((float)9);
+        iR_sensor1.add((float)8);
+        iR_sensor1.add((float)7);
+        iR_sensor1.add((float)6);
 
-        //Calculations();
+        iR_sensor2.add((float)6);
+        iR_sensor2.add((float)5);
+        iR_sensor2.add((float)4);
+        iR_sensor2.add((float)3);
+        iR_sensor2.add((float)2);
+        iR_sensor2.add((float)3);
+        iR_sensor2.add((float)4);
+        iR_sensor2.add((float)5);
+        iR_sensor2.add((float)6);
+
+        Calculations();
+
         serialPort = new SerialPort("COM3");
         try {
             serialPort.openPort();
@@ -45,7 +63,7 @@ public class Scan {
             iR_sensorCoordinate2 = createCoordinates(iR_sensor2, intervalX);
             // Сглаживание данных упрощенным методом Калмана
                 // коэффецент храниться в переменной k. 1 Это не обработаные значения, 0.1 максимальное сглаживание.
-            k1 = (float) 0.1;
+            k1 = (float) 0.3;
                 //Создаем масивы координат с максимальным сглаживанием для нахождения углов.
             iR_sensorCoordinate1_Kalman = checkIndications(iR_sensorCoordinate1, k1);
             iR_sensorCoordinate2_Kalman = checkIndications(iR_sensorCoordinate2, k1);
@@ -58,6 +76,11 @@ public class Scan {
             MaxMin = findCenterPoint(iR_sensorCoordinate1_Kalman,iR_sensorCoordinate2_Kalman);
             //делим 2 масивка с координатами на 4 масива в точках обозночающие точки сторон прямоугольника MinMax
             boxSide = divideOnSide(iR_sensorCoordinate1,iR_sensorCoordinate2,MaxMin);
+            //Удаляем по 3 координаты с каждой стороны т.к. это область наибольшей погрешности
+            eliminationOfError(boxSide.get(0));
+            eliminationOfError(boxSide.get(1));
+            eliminationOfError(boxSide.get(2));
+            eliminationOfError(boxSide.get(3));
             // нахождение коэфицента отклонения AB в формуле прямой y = A*x+B;
             float[] deviationAB1 = Approximation(boxSide.get(0));
             float[] deviationAB2 = Approximation(boxSide.get(1));
@@ -152,16 +175,24 @@ public class Scan {
         return boxSide;
     }
 
+    private static void eliminationOfError(ArrayList<Coordinate> boxSide){
+        for(int i =0; i < 1; i++){
+            boxSide.remove(boxSide.size()-(i+1));
+            boxSide.remove(i);
+        }
+    }
+
     private static ArrayList<Coordinate> checkIndications (ArrayList<Coordinate> coordinates, float k){
+        ArrayList<Coordinate> filterCoordinates = new ArrayList<>();
         // Mn показание после фильтрования
         float Mn = coordinates.get(0).y;
 
         for(Coordinate point: coordinates){
             Mn = k * point.y + (1 - k) * Mn;
-            point.y = Mn;
+            filterCoordinates.add(new Coordinate(point.x,Mn));
         }
 
-        return coordinates;
+        return filterCoordinates;
     }
 
     private static float[] Approximation (ArrayList<Coordinate> coordinates){
